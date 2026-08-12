@@ -58,17 +58,6 @@
             background-color: #020617;
             color: #f8fafc;
         }
-        .arch-card-frame {
-            border-top-left-radius: 9999px;
-            border-top-right-radius: 9999px;
-            border-bottom-left-radius: 1rem;
-            border-bottom-right-radius: 1rem;
-            transition: all 0.3s ease;
-        }
-        .arch-card-frame:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -6px rgba(15, 44, 89, 0.25);
-        }
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -173,6 +162,7 @@
             { id: 34, title: "Nirmala", author: "Munshi Premchand", category: "Literature", medium: "Hindi", status: "Available" }
         ];
 
+        // 6-LANGUAGE TRANSLATIONS DICTIONARY
         const TRANSLATIONS = {
             EN: {
                 title: "DELHI GPO - 110006",
@@ -1040,13 +1030,9 @@
             });
             const [heroUrlInput, setHeroUrlInput] = useState('');
 
-            // Desk Section Background Image State (ALWAYS DEFAULTS TO USER'S NEW IMAGE IF UNSET)
+            // Desk Section Background Image State
             const [deskImage, setDeskImage] = useState(() => {
-                const saved = safeStorage.getItem('gpo_library_desk_img');
-                if (!saved || saved.includes('unsplash.com')) {
-                    return DEFAULT_DESK_IMG;
-                }
-                return saved;
+                return safeStorage.getItem('gpo_library_desk_img') || DEFAULT_DESK_IMG;
             });
             const [deskUrlInput, setDeskUrlInput] = useState('');
 
@@ -1402,36 +1388,43 @@
                         </div>
                     )}
 
-                    {/* MAIN HEADER */}
+                    {}
                     <header className="bg-postal-navy border-b-4 border-postal-gold text-white shadow-xl sticky top-0 z-30">
-                        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+                        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between">
                             
-                            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveView('HOME')}>
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-postal-red rounded-full flex items-center justify-center border-2 border-postal-gold shadow-md">
-                                    <i className="fa-solid fa-book-bookmark text-postal-gold text-lg sm:text-2xl animate-pulse"></i>
+                            {/* OFFICIAL INDIA POST LOGO & ELEGANT EMBLEM HEADER */}
+                            <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => setActiveView('HOME')}>
+                                <div className="w-13 h-11 sm:w-16 sm:h-13 bg-white p-1 rounded-xl border-2 border-postal-gold shadow-md flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+                                    <svg viewBox="0 0 200 110" className="w-full h-full drop-shadow-sm">
+                                        {/* Devanagari Header Text 'भारतीय डाक' */}
+                                        <text x="100" y="20" textAnchor="middle" fill="#B31917" fontSize="18" fontWeight="bold" fontFamily="Inter, sans-serif">भारतीय डाक</text>
+                                        
+                                        {/* Official Red Box */}
+                                        <rect x="35" y="28" width="130" height="58" fill="#B31917" rx="3" />
+                                        
+                                        {/* Wing / Envelope Swosh Lines */}
+                                        <path d="M 8,50 C 30,35 45,36 55,43 C 65,50 72,73 88,76 C 108,79 142,40 192,16 C 152,30 118,56 88,63 C 70,63 60,46 44,39 C 28,33 16,40 8,50 Z" fill="#FFC107" />
+                                        <path d="M 20,46 C 36,35 48,39 58,46 C 68,53 74,69 89,71 C 109,73 144,39 184,24 C 147,34 117,59 89,63 C 74,63 64,49 47,41 C 35,35 27,39 20,46 Z" fill="#FFD700" />
+                                        
+                                        {/* English Brand Text 'India Post' */}
+                                        <text x="165" y="102" textAnchor="end" fill="#B31917" fontSize="16" fontWeight="bold" fontFamily="Cinzel, Georgia, serif">India Post</text>
+                                    </svg>
                                 </div>
-                                <div>
-                                    <h1 className="font-cinzel font-extrabold text-xs sm:text-lg tracking-wider text-amber-300 drop-shadow">
-                                        {t('title')}
+                                <div className="flex flex-col justify-center">
+                                    <h1 className="font-cinzel font-black text-base sm:text-2xl lg:text-2xl tracking-wider text-amber-300 drop-shadow-md bg-gradient-to-r from-amber-200 via-postal-gold to-amber-400 bg-clip-text text-transparent flex items-center space-x-2">
+                                        <span>{t('title')}</span>
                                     </h1>
-                                    <p className="text-[10px] sm:text-xs text-slate-300 font-medium">
-                                        {t('subTitle')}
+                                    <p className="text-[10px] sm:text-xs text-slate-200 font-bold tracking-wide flex items-center space-x-1.5 opacity-95">
+                                        <span className="w-2 h-2 rounded-full bg-postal-gold inline-block animate-pulse"></span>
+                                        <span>{t('subTitle')}</span>
                                     </p>
                                 </div>
                             </div>
 
+                            {/* REORDERED HEADER CONTROLS (GLOBE DROPDOWN 4TH FROM RIGHT) */}
                             <div className="flex items-center space-x-2 sm:space-x-3">
                                 
-                                {/* DARK / LIGHT MODE TOGGLE BUTTON */}
-                                <button 
-                                    onClick={() => setDarkMode(!darkMode)}
-                                    className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-800 hover:bg-slate-700 border border-postal-gold/60 text-white rounded-full shadow transition-all flex items-center justify-center text-sm"
-                                    title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                                >
-                                    <i className={`fa-solid ${darkMode ? 'fa-sun text-amber-400' : 'fa-moon text-sky-200'}`}></i>
-                                </button>
-
-                                {/* 6-LANGUAGE GLOBE DROPDOWN BUTTON */}
+                                {/* 4TH PLACE FROM RIGHT: 6-LANGUAGE GLOBE DROPDOWN */}
                                 <div className="relative">
                                     <button 
                                         onClick={() => setShowLangDropdown(!showLangDropdown)}
@@ -1465,6 +1458,15 @@
                                         </div>
                                     )}
                                 </div>
+
+                                {/* DARK / LIGHT MODE TOGGLE BUTTON */}
+                                <button 
+                                    onClick={() => setDarkMode(!darkMode)}
+                                    className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-800 hover:bg-slate-700 border border-postal-gold/60 text-white rounded-full shadow transition-all flex items-center justify-center text-sm"
+                                    title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                                >
+                                    <i className={`fa-solid ${darkMode ? 'fa-sun text-amber-400' : 'fa-moon text-sky-200'}`}></i>
+                                </button>
 
                                 {/* USER NOTIFICATION BELL BUTTON WITH LIVE UNREAD BADGE */}
                                 <div className="relative">
@@ -1593,63 +1595,10 @@
                     {/* MAIN CONTENT AREA */}
                     <main className={`flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'}`}>
                         
-                        {}
+                        {/* HOME VIEW */}
                         {activeView === 'HOME' && (
                             <div className="space-y-8 animate-fade-in-up">
                                 
-                                {/* ARCH STAT CARDS */}
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
-                                    
-                                    <div 
-                                        onClick={() => { setActiveView('TOTAL_BOOKS'); setCurrentPage(1); }}
-                                        className={`arch-card-frame p-3 sm:p-5 flex flex-col items-center text-center cursor-pointer border-2 ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-xl`}
-                                    >
-                                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-t-full rounded-b-xl overflow-hidden border-2 border-postal-blue mb-2 shadow-inner bg-sky-50 flex items-center justify-center">
-                                            <i className="fa-solid fa-books text-2xl sm:text-3xl text-postal-blue"></i>
-                                        </div>
-                                        <span className={`text-[10px] sm:text-xs font-extrabold ${darkMode ? 'text-amber-400' : 'text-postal-blue'}`}>{t('cardTotal')}</span>
-                                        <span className="text-2xl sm:text-3xl font-black text-amber-500 font-cinzel my-0.5">{books.length}</span>
-                                        <span className="text-[9px] font-semibold text-slate-400">{t('cardTotalSub')}</span>
-                                    </div>
-
-                                    <div 
-                                        onClick={() => { setActiveView('AVAIL_BOOKS'); setCurrentPage(1); }}
-                                        className={`arch-card-frame p-3 sm:p-5 flex flex-col items-center text-center cursor-pointer border-2 ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-xl`}
-                                    >
-                                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-t-full rounded-b-xl overflow-hidden border-2 border-emerald-600 mb-2 shadow-inner bg-emerald-50 flex items-center justify-center">
-                                            <i className="fa-solid fa-book-circle-check text-2xl sm:text-3xl text-emerald-600"></i>
-                                        </div>
-                                        <span className="text-[10px] sm:text-xs font-extrabold text-emerald-500 tracking-wider">{t('cardAvail')}</span>
-                                        <span className="text-2xl sm:text-3xl font-black text-emerald-500 font-cinzel my-0.5">{books.filter(b => b.status === 'Available').length}</span>
-                                        <span className="text-[9px] text-emerald-400 font-semibold">{t('cardAvailSub')}</span>
-                                    </div>
-
-                                    <div 
-                                        onClick={() => { setActiveView('ISSUED_BOOKS'); setCurrentPage(1); }}
-                                        className={`arch-card-frame p-3 sm:p-5 flex flex-col items-center text-center cursor-pointer border-2 ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-xl`}
-                                    >
-                                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-t-full rounded-b-xl overflow-hidden border-2 border-sky-600 mb-2 shadow-inner bg-sky-50 flex items-center justify-center">
-                                            <i className="fa-solid fa-hand-holding-hand text-2xl sm:text-3xl text-sky-600"></i>
-                                        </div>
-                                        <span className="text-[10px] sm:text-xs font-extrabold text-sky-400 tracking-wider">{t('cardIssued')}</span>
-                                        <span className="text-2xl sm:text-3xl font-black text-sky-400 font-cinzel my-0.5">{books.filter(b => b.status === 'Issued').length}</span>
-                                        <span className="text-[9px] text-sky-300 font-semibold">{t('cardIssuedSub')}</span>
-                                    </div>
-
-                                    <div 
-                                        onClick={() => setActiveView('REQUISITION')}
-                                        className={`arch-card-frame p-3 sm:p-5 flex flex-col items-center text-center cursor-pointer border-2 border-postal-red ${darkMode ? 'bg-slate-900' : 'bg-white'} shadow-xl`}
-                                    >
-                                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-t-full rounded-b-xl overflow-hidden border-2 border-postal-red mb-2 shadow-inner bg-red-50 flex items-center justify-center">
-                                            <i className="fa-solid fa-file-signature text-2xl sm:text-3xl text-postal-red"></i>
-                                        </div>
-                                        <span className="text-[10px] sm:text-xs font-extrabold text-postal-red tracking-wider">{t('cardNeed')}</span>
-                                        <span className={`text-xs font-bold mt-1 ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>{t('cardNeedSub')}</span>
-                                        <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{t('cardNeedClick')}</span>
-                                    </div>
-
-                                </div>
-
                                 {/* LIBRARY INFO & RULES DESK */}
                                 <div className={`rounded-2xl p-4 sm:p-6 shadow-xl border-2 relative overflow-hidden ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-300'}`}>
                                     
@@ -1714,7 +1663,7 @@
                             </div>
                         )}
 
-                        {}
+                        {/* CATALOG VIEWS (TOTAL, AVAILABLE, ISSUED) */}
                         {(activeView === 'TOTAL_BOOKS' || activeView === 'AVAIL_BOOKS' || activeView === 'ISSUED_BOOKS') && (
                             <div className="space-y-5 animate-fade-in-up">
                                 
@@ -1907,7 +1856,7 @@
                             </div>
                         )}
 
-                        {}
+                        {/* REQUISITION FORM */}
                         {activeView === 'REQUISITION' && (
                             <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
                                 <div className={`p-6 rounded-2xl border-2 shadow-xl ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -2299,9 +2248,13 @@
                                                                         showToast("Full HD Banner image saved permanently!", "success");
                                                                     } catch (err) {
                                                                         const optimalBase64 = canvas.toDataURL('image/jpeg', 0.82);
-                                                                        safeStorage.setItem('gpo_library_hero_img', optimalBase64);
-                                                                        setHeroImage(optimalBase64);
-                                                                        showToast("Banner image saved with optimal HD quality!", "success");
+                                                                        try {
+                                                                            safeStorage.setItem('gpo_library_hero_img', optimalBase64);
+                                                                            setHeroImage(optimalBase64);
+                                                                            showToast("Banner image saved with optimal HD quality!", "success");
+                                                                        } catch (err2) {
+                                                                            showToast("Browser storage full! Please use the Web Image URL option.", "error");
+                                                                        }
                                                                     }
                                                                 };
                                                                 img.src = event.target.result;
@@ -2331,7 +2284,7 @@
                                                                 safeStorage.setItem('gpo_library_hero_img', url);
                                                                 setHeroImage(url);
                                                                 setHeroUrlInput('');
-                                                                showToast("Banner image URL applied!", "success");
+                                                                showToast("Banner image URL applied and saved!", "success");
                                                             }
                                                         }}
                                                         className="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg shadow"
@@ -2414,9 +2367,13 @@
 
                                                                     const hdCompressedBase64 = canvas.toDataURL('image/jpeg', 0.88);
                                                                     
-                                                                    safeStorage.setItem('gpo_library_desk_img', hdCompressedBase64);
-                                                                    setDeskImage(hdCompressedBase64);
-                                                                    showToast("Desk section image saved permanently!", "success");
+                                                                    try {
+                                                                        safeStorage.setItem('gpo_library_desk_img', hdCompressedBase64);
+                                                                        setDeskImage(hdCompressedBase64);
+                                                                        showToast("Desk section image saved permanently!", "success");
+                                                                    } catch (err) {
+                                                                        showToast("Browser storage full! Please use the Web Image URL option.", "error");
+                                                                    }
                                                                 };
                                                                 img.src = event.target.result;
                                                             };
@@ -2445,7 +2402,7 @@
                                                                 safeStorage.setItem('gpo_library_desk_img', url);
                                                                 setDeskImage(url);
                                                                 setDeskUrlInput('');
-                                                                showToast("Desk section image URL applied!", "success");
+                                                                showToast("Desk section image URL applied and saved!", "success");
                                                             }
                                                         }}
                                                         className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow"
@@ -2487,8 +2444,6 @@
 
                     </main>
 
-                    {}
-                    
                     {/* MODAL: USER NOTIFICATIONS CENTER */}
                     {showNotifModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -2725,8 +2680,8 @@
                                 </button>
 
                                 <div className="text-center mb-4">
-                                    <div className="w-12 h-12 bg-postal-red rounded-full flex items-center justify-center mx-auto mb-2 border border-postal-gold shadow">
-                                        <i className="fa-solid fa-mobile-screen-button text-postal-gold text-xl"></i>
+                                    <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-postal-red rounded-full flex items-center justify-center mx-auto mb-2 border border-postal-gold shadow-lg">
+                                        <i className="fa-solid fa-mobile-screen-button text-amber-200 text-xl"></i>
                                     </div>
                                     <h3 className="font-cinzel font-bold text-base text-amber-300">{t('installModalTitle')}</h3>
                                     <p className="text-xs text-slate-400 mt-1">{t('installModalSub')}</p>
@@ -2743,54 +2698,40 @@
                         </div>
                     )}
 
-                    {/* LEFT-SIDE APP INSTALLATION POPUP */}
+                    {/* SMART & MINIMALIST APP INSTALL FLOATING PILL */}
                     {showInstallPopup && (
-                        <div className="fixed bottom-4 left-4 z-40 bg-slate-900 border-2 border-postal-gold text-white p-4 rounded-2xl shadow-2xl max-w-xs animate-fade-in-up">
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center space-x-2">
-                                    <div className="w-8 h-8 bg-postal-red rounded-full flex items-center justify-center border border-postal-gold">
-                                        <i className="fa-solid fa-mobile-screen-button text-postal-gold text-sm"></i>
-                                    </div>
-                                    <h4 className="font-cinzel font-bold text-xs text-amber-300">{t('installTitle')}</h4>
-                                </div>
-                                <button 
-                                    onClick={() => {
-                                        setShowInstallPopup(false);
-                                        safeSession.setItem('gpo_app_popup_dismissed', 'true');
-                                    }}
-                                    className="text-slate-400 hover:text-white text-xs ml-2"
-                                >
-                                    <i className="fa-solid fa-xmark"></i>
-                                </button>
+                        <div className="fixed bottom-4 left-4 z-40 bg-slate-900/90 dark:bg-slate-900/95 backdrop-blur-lg border border-slate-700/80 text-white py-1.5 px-3 rounded-full shadow-xl animate-fade-in-up flex items-center space-x-2.5 hover:border-amber-400/80 transition-all">
+                            <div className="w-7 h-7 bg-amber-500/15 border border-amber-400/40 rounded-full flex items-center justify-center shrink-0">
+                                <i className="fa-solid fa-mobile-screen-button text-amber-400 text-xs"></i>
                             </div>
-                            <p className="text-[11px] text-slate-300 my-2 leading-tight">
-                                {t('installSub')}
-                            </p>
-                            <div className="space-y-1.5 pt-1">
-                                <button 
-                                    onClick={() => {
-                                        if (deferredPrompt) {
-                                            deferredPrompt.prompt();
-                                            deferredPrompt.userChoice.then(() => setDeferredPrompt(null));
-                                        } else {
-                                            setShowInstallModal(true);
-                                        }
-                                    }}
-                                    className="w-full py-1.5 bg-postal-red hover:bg-postal-darkRed text-white font-bold rounded-lg text-xs shadow flex items-center justify-center space-x-1"
-                                >
-                                    <i className="fa-solid fa-download text-[10px]"></i>
-                                    <span>{t('installBtn')}</span>
-                                </button>
-                                <button 
-                                    onClick={() => {
-                                        setShowInstallPopup(false);
-                                        safeSession.setItem('gpo_app_popup_dismissed', 'true');
-                                    }}
-                                    className="w-full py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold rounded-lg"
-                                >
-                                    {t('continueWebsite')}
-                                </button>
+                            <div className="flex flex-col pr-1 text-left">
+                                <span className="font-extrabold text-[11px] text-amber-300 leading-tight">{t('installTitle')}</span>
+                                <span className="text-[9px] text-slate-300 font-medium">Quick Access</span>
                             </div>
+                            <button 
+                                onClick={() => {
+                                    if (deferredPrompt) {
+                                        deferredPrompt.prompt();
+                                        deferredPrompt.userChoice.then(() => setDeferredPrompt(null));
+                                    } else {
+                                        setShowInstallModal(true);
+                                    }
+                                }}
+                                className="px-3 py-1 bg-postal-red hover:bg-postal-darkRed text-white font-bold rounded-full text-[11px] shadow transition-all flex items-center space-x-1 shrink-0 active:scale-95"
+                            >
+                                <i className="fa-solid fa-download text-[9px]"></i>
+                                <span>{t('installBtn')}</span>
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setShowInstallPopup(false);
+                                    safeSession.setItem('gpo_app_popup_dismissed', 'true');
+                                }}
+                                className="w-5 h-5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-[9px] transition-all shrink-0"
+                                title="Close"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
                         </div>
                     )}
 
