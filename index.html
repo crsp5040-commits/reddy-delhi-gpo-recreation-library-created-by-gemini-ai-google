@@ -168,7 +168,7 @@
         const { useState, useEffect, useMemo, useCallback } = React;
 
         const SUPABASE_URL = "https://madbookrnkdsvfouqbqq.supabase.co";
-        const SUPABASE_KEY = "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
+        const SUPABASE_KEY = "sb_publishable_HruRJz4QayOUKBfjvI0ixg_adHZ04Hz";
 
         const FALLBACK_APK_URL = "https://madbookrnkdsvfouqbqq.supabase.co/storage/v1/object/public/library-apk/Delhi%20GPO%20-06.apk?download";
         const FALLBACK_APK_LOGO_URL = "https://madbookrnkdsvfouqbqq.supabase.co/storage/v1/object/public/library-images/library%20apk%20%20logo.png";
@@ -178,7 +178,7 @@
 
         let supabaseClient = null;
         try {
-            if (window.supabase && SUPABASE_KEY !== "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE") {
+            if (window.supabase && SUPABASE_KEY !== "sb_publishable_HruRJz4QayOUKBfjvI0ixg_adHZ04Hz") {
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
         } catch(e) {
