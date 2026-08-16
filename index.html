@@ -1006,52 +1006,7 @@ try {
                 setActiveView('TOTAL_BOOKS');
             };
 
-            const handleApproveReq = async (reqId) => {
-    const reqItem = requisitions.find(r => r.id === reqId);
-    if (!reqItem) return;
-
-    // Local update
-    const updatedBooks = books.map(b => {
-        if (b.id === reqItem.bookId) {
-            return { 
-                ...b, 
-                status: 'Issued', 
-                issuedTo: `${reqItem.empName} (${reqItem.empId})` 
-            };
-        }
-        return b;
-    });
-    setBooks(updatedBooks);
-
-    const handleApproveReq = async (reqId) => {
-    const reqItem = requisitions.find(r => String(r.id) === String(reqId));
-    if (!reqItem) {
-        showToast("Request not found.", "error");
-        return;
-    }
-
-    if (!supabaseClient) {
-        showToast("Database connection is not ready. Check Supabase key.", "error");
-        return;
-    }
-
-    const issuedToValue = `${reqItem.empName} (${reqItem.empId})`;
-
-    try {
-        // 1. Books table update (snake_case - database column)
-        const { error: bookError } = await supabaseClient
-            .from("books")
-            .update({
-                status: "Issued",
-                issued_to: issuedToValue
-            })
-            .eq("id", reqItem.bookId);
-
-        if (bookError) {
-            console.error("Book issue error:", bookError);
-            showToast(`Book issue failed: ${bookError.message}`, "error");
-            return;   // ← stop here, local state మారకూడదు
-        }
+            
 
         // 2. Requisitions table update
         const { error: requestError } = await supabaseClient
