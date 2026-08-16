@@ -177,13 +177,13 @@
         const FALLBACK_DESK_URL = "https://madbookrnkdsvfouqbqq.supabase.co/storage/v1/object/public/library-images/desk%20image.png";
 
         let supabaseClient = null;
-        try {
-            if (window.supabase && SUPABASE_KEY !== "sb_publishable_HruRJz4QayOUKBfjvI0ixg_adHZ04Hz") {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
-        } catch(e) {
-            console.warn("Supabase init notice:", e);
-        }
+try {
+    if (window.supabase && SUPABASE_KEY && SUPABASE_KEY.length > 20) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+} catch(e) {
+    console.warn("Supabase init notice:", e);
+}
 
         const safeStorage = {
             getItem: (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } },
