@@ -1007,29 +1007,65 @@ try {
             };
 
             const handleApproveReq = async (reqId) => {
-                const reqItem = requisitions.find(r => r.id === reqId);
-                if (!reqItem) return;
+    const reqItem = requisitions.find(r => r.id === reqId);
+    if (!reqItem) return;
 
-                const updatedBooks = books.map(b => {
-                    if (b.id === reqItem.bookId) {
-                        return { ...b, status: 'Issued', issuedTo: `${reqItem.empName} (${reqItem.empId})` };
-                    }
-                    return b;
-                });
-                setBooks(updatedBooks);
-
-                const updatedReqs = requisitions.map(r => r.id === reqId ? { ...r, status: 'APPROVED' } : r);
-                setRequisitions(updatedReqs);
-
-                if (supabaseClient) {
-                    try {
-                        await supabaseClient.from('books').update({ status: 'Issued', issuedTo: `${reqItem.empName} (${reqItem.empId})` }).eq('id', reqItem.bookId);
-                        await supabaseClient.from('requisitions').update({ status: 'APPROVED' }).eq('id', reqId);
-                    } catch(e) { console.warn("Approve sync warning:", e); }
-                }
-
-                showToast(`Book #${reqItem.bookId} approved and issued to ${reqItem.empName}.`, 'success');
+    // Local update
+    const updatedBooks = books.map(b => {
+        if (b.id === reqItem.bookId) {
+            return { 
+                ...b, 
+                status: 'Issued', 
+                issuedTo: `${reqItem.empName} (${reqItem.empId})` 
             };
+        }
+        return b;
+    });
+    setBooks(updatedBooks);
+
+    const updatedReqs = requisitions.map(r => 
+        r.id === reqId ? { ...r, status: 'APPROVED' } : r
+    );
+    setRequisitions(updatedReqs);
+
+    // Supabase update
+    if (supabaseClient) {
+        try {
+            // Books table update
+            const { error: bookError } = await supabaseClient
+                .from('books')
+                .update({ 
+                    status: 'Issued',
+                    issued_to: `${reqItem.empName} (${reqItem.empId})`   // snake_case try
+                })
+                .eq('id', reqItem.bookId);
+
+            if (bookError) {
+                // fallback camelCase
+                await supabaseClient
+                    .from('books')
+                    .update({ 
+                        status: 'Issued',
+                        issuedTo: `${reqItem.empName} (${reqItem.empId})`
+                    })
+                    .eq('id', reqItem.bookId);
+            }
+
+            // Requisitions table update
+            await supabaseClient
+                .from('requisitions')
+                .update({ status: 'APPROVED' })
+                .eq('id', reqId);
+
+            showToast(`Book #${reqItem.bookId} approved and issued successfully.`, 'success');
+        } catch (err) {
+            console.error("Approve error:", err);
+            showToast("Database update failed. Check console.", "error");
+        }
+    } else {
+        showToast(`Book #${reqItem.bookId} approved (local only).`, 'success');
+    }
+};
 
             const handleRejectReq = async (reqId) => {
                 const updatedReqs = requisitions.map(r => r.id === reqId ? { ...r, status: 'REJECTED' } : r);
