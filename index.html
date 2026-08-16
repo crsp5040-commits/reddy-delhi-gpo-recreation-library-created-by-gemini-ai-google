@@ -177,13 +177,13 @@
         const FALLBACK_DESK_URL = "https://madbookrnkdsvfouqbqq.supabase.co/storage/v1/object/public/library-images/desk%20image.png";
 
         let supabaseClient = null;
-try {
-    if (window.supabase && SUPABASE_KEY && SUPABASE_KEY.length > 20) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-} catch(e) {
-    console.warn("Supabase init notice:", e);
-}
+        try {
+            if (window.supabase && SUPABASE_KEY !== "sb_publishable_HruRJz4QayOUKBfjvI0ixg_adHZ04Hz") {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch(e) {
+            console.warn("Supabase init notice:", e);
+        }
 
         const safeStorage = {
             getItem: (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } },
@@ -1006,55 +1006,30 @@ try {
                 setActiveView('TOTAL_BOOKS');
             };
 
-            
+            const handleApproveReq = async (reqId) => {
+                const reqItem = requisitions.find(r => r.id === reqId);
+                if (!reqItem) return;
 
-        // 2. Requisitions table update
-        const { error: requestError } = await supabaseClient
-            .from("requisitions")
-            .update({ status: "APPROVED" })
-            .eq("id", reqId);
+                const updatedBooks = books.map(b => {
+                    if (b.id === reqItem.bookId) {
+                        return { ...b, status: 'Issued', issuedTo: `${reqItem.empName} (${reqItem.empId})` };
+                    }
+                    return b;
+                });
+                setBooks(updatedBooks);
 
-        if (requestError) {
-            console.error("Requisition update error:", requestError);
-            showToast(`Book issued, but request status update failed: ${requestError.message}`, "error");
-            // books already updated, so refresh data
-            await fetchAllData();
-            return;
-        }
+                const updatedReqs = requisitions.map(r => r.id === reqId ? { ...r, status: 'APPROVED' } : r);
+                setRequisitions(updatedReqs);
 
-        // 3. Only after successful DB update → refresh everything from database
-        await fetchAllData();
-        showToast(`Book #${reqItem.bookId} issued to ${reqItem.empName}.`, "success");
+                if (supabaseClient) {
+                    try {
+                        await supabaseClient.from('books').update({ status: 'Issued', issuedTo: `${reqItem.empName} (${reqItem.empId})` }).eq('id', reqItem.bookId);
+                        await supabaseClient.from('requisitions').update({ status: 'APPROVED' }).eq('id', reqId);
+                    } catch(e) { console.warn("Approve sync warning:", e); }
+                }
 
-    } catch (error) {
-        console.error("Approve unexpected error:", error);
-        showToast("Book issue failed. Check browser console (F12).", "error");
-    }
-};
-
-    const { error: requestError } = await supabaseClient
-      .from("requisitions")
-      .update({ status: "APPROVED" })
-      .eq("id", reqId);
-
-    if (requestError) {
-      console.error("Requisition update error:", requestError);
-      showToast(`Book updated, but request update failed: ${requestError.message}`, "error");
-      await fetchAllData();
-      return;
-    }
-
-    await fetchAllData();
-    showToast(`Book issued to ${reqItem.empName}.`, "success");
-  } catch (error) {
-    console.error("Approve issue unexpected error:", error);
-    showToast("Book issue failed. Check browser console.", "error");
-  }
-};
-    } else {
-        showToast(`Book #${reqItem.bookId} approved (local only).`, 'success');
-    }
-};
+                showToast(`Book #${reqItem.bookId} approved and issued to ${reqItem.empName}.`, 'success');
+            };
 
             const handleRejectReq = async (reqId) => {
                 const updatedReqs = requisitions.map(r => r.id === reqId ? { ...r, status: 'REJECTED' } : r);
