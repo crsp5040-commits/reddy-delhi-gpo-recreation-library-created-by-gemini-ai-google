@@ -1012,7 +1012,7 @@
 
                 const updatedBooks = books.map(b => {
                     if (b.id === reqItem.bookId) {
-                        return { ...b, status: 'Issued', issuedTo: `${reqItem.empName} (${reqItem.empId})` };
+                        return { ...b, status: 'Issued', issued_to: `${reqItem.empName} (${reqItem.empId})` };
                     }
                     return b;
                 });
