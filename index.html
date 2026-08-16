@@ -1024,34 +1024,58 @@ try {
     setBooks(updatedBooks);
 
     const handleApproveReq = async (reqId) => {
-  const reqItem = requisitions.find((r) => String(r.id) === String(reqId));
-
-  if (!reqItem) {
-    showToast("Request not found.", "error");
-    return;
-  }
-
-  if (!supabaseClient) {
-    showToast("Database connection is not ready.", "error");
-    return;
-  }
-
-  const issuedToValue = `${reqItem.empName} (${reqItem.empId})`;
-
-  try {
-    const { error: bookError } = await supabaseClient
-      .from("books")
-      .update({
-        status: "Issued",
-        issued_to: issuedToValue
-      })
-      .eq("id", reqItem.bookId);
-
-    if (bookError) {
-      console.error("Book issue error:", bookError);
-      showToast(`Book issue failed: ${bookError.message}`, "error");
-      return;
+    const reqItem = requisitions.find(r => String(r.id) === String(reqId));
+    if (!reqItem) {
+        showToast("Request not found.", "error");
+        return;
     }
+
+    if (!supabaseClient) {
+        showToast("Database connection is not ready. Check Supabase key.", "error");
+        return;
+    }
+
+    const issuedToValue = `${reqItem.empName} (${reqItem.empId})`;
+
+    try {
+        // 1. Books table update (snake_case - database column)
+        const { error: bookError } = await supabaseClient
+            .from("books")
+            .update({
+                status: "Issued",
+                issued_to: issuedToValue
+            })
+            .eq("id", reqItem.bookId);
+
+        if (bookError) {
+            console.error("Book issue error:", bookError);
+            showToast(`Book issue failed: ${bookError.message}`, "error");
+            return;   // ← stop here, local state మారకూడదు
+        }
+
+        // 2. Requisitions table update
+        const { error: requestError } = await supabaseClient
+            .from("requisitions")
+            .update({ status: "APPROVED" })
+            .eq("id", reqId);
+
+        if (requestError) {
+            console.error("Requisition update error:", requestError);
+            showToast(`Book issued, but request status update failed: ${requestError.message}`, "error");
+            // books already updated, so refresh data
+            await fetchAllData();
+            return;
+        }
+
+        // 3. Only after successful DB update → refresh everything from database
+        await fetchAllData();
+        showToast(`Book #${reqItem.bookId} issued to ${reqItem.empName}.`, "success");
+
+    } catch (error) {
+        console.error("Approve unexpected error:", error);
+        showToast("Book issue failed. Check browser console (F12).", "error");
+    }
+};
 
     const { error: requestError } = await supabaseClient
       .from("requisitions")
