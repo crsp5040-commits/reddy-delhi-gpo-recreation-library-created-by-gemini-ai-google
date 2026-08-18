@@ -433,7 +433,7 @@
                 apkUrl: OFFICIAL_APK_URL
             });
 
-            /* ==== ADMIN-CONTROLLABLE SITE CONTENT (mirrors DEFAULT_SITE_CONTENT, editable from Admin Panel, persisted in Supabase 'site_settings' table) ==== */
+            /* ==== ADMIN-CONTROLLABLE SITE CONTENT (mirrors DEFAULT_SITE_CONTENT, editable from Admin Panel, persisted in Supabase 'site_settings_new' table) ==== */
             const [siteContent, setSiteContent] = useState({ ...DEFAULT_SITE_CONTENT });
             const [siteContentForm, setSiteContentForm] = useState({ ...DEFAULT_SITE_CONTENT });
             const [savingSiteContent, setSavingSiteContent] = useState(false);
@@ -520,7 +520,7 @@
                     if (!hErr && hData && hData.length > 0) setHolidays(hData);
 
                     /* Site content / images / patron info — single settings row (id = 1) */
-                    const { data: scData, error: scErr } = await supabaseClient.from('site_settings').select('*').eq('id', 1).maybeSingle();
+                    const { data: scData, error: scErr } = await supabaseClient.from('site_settings_new').select('*').eq('id', 1).maybeSingle();
                     if (!scErr && scData) {
                         const mergedContent = { ...DEFAULT_SITE_CONTENT, ...scData };
                         setSiteContent(mergedContent);
@@ -1343,7 +1343,7 @@
                     };
 
                     if (supabaseClient) {
-                        const { error } = await supabaseClient.from('site_settings').upsert([payload], { onConflict: 'id' });
+                        const { error } = await supabaseClient.from('site_settings_new').upsert([payload], { onConflict: 'id' });
                         if (error) throw error;
                     }
 
@@ -1353,7 +1353,7 @@
                     showToast("Site content, timings, rules, patron info & images updated successfully!", "success");
                     fetchDatabaseData();
                 } catch(err) {
-                    showToast("Error saving site content: " + err.message + " (Ensure 'site_settings' table exists in Supabase)", "error");
+                    showToast("Error saving site content: " + err.message + " (Ensure 'site_settings_new' table exists in Supabase)", "error");
                 } finally {
                     setSavingSiteContent(false);
                 }
@@ -2741,7 +2741,7 @@
                                             <div>• <span className="font-mono">books</span>, <span className="font-mono">requisitions</span>, <span className="font-mono">book_transactions</span> — Catalog &amp; Circulation</div>
                                             <div>• <span className="font-mono">holidays</span> — Holidays &amp; Festivals Manager</div>
                                             <div>• <span className="font-mono">notifications</span> — Notifications Broadcast Manager</div>
-                                            <div>• <span className="font-mono">site_settings</span> — Site Content &amp; Images (single-row table)</div>
+                                            <div>• <span className="font-mono">site_settings_new</span> — Site Content &amp; Images (single-row table)</div>
                                             <div>• <span className="font-mono">governing_body</span> — Governing Body Manager</div>
                                             <div>• <span className="font-mono">social_channels</span> — Social Channels Manager</div>
                                         </div>
