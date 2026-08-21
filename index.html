@@ -130,6 +130,63 @@
         .animate-subtle-pulse {
             animation: subtlePulse 1.2s infinite ease-in-out;
         }
+
+        /* ===================== MOBILE-APP PERFECT SIZING LAYER ===================== */
+        /* Safe-area support for notch / status-bar / gesture-bar devices (WebView app) */
+        .site-header {
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+        footer {
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+        }
+        body {
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+        }
+
+        /* Fluid base font-size scaling so every phone width gets balanced, non-cramped text */
+        html { font-size: 16px; }
+        @media (max-width: 480px) {
+            html { font-size: 15px; }
+        }
+        @media (max-width: 400px) {
+            html { font-size: 14px; }
+        }
+        @media (max-width: 340px) {
+            html { font-size: 13px; }
+        }
+
+        /* Comfortable minimum touch target (Apple/Google HIG = 44px) for every tappable control */
+        .tap-target {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        button, select, input[type="checkbox"], a.tap-target {
+            touch-action: manipulation;
+        }
+
+        /* Prevent iOS auto-zoom on input focus (keeps layout stable while typing) */
+        input, select, textarea {
+            font-size: max(16px, 1em);
+        }
+        @media (max-width: 480px) {
+            input, select, textarea { font-size: 16px; }
+        }
+
+        /* Modals: full-height scrollable on very short mobile screens instead of overflowing */
+        .mobile-modal-scroll {
+            max-height: calc(100vh - 2rem);
+            max-height: calc(100dvh - 2rem);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Admin tab strip and any wide table: smooth horizontal scroll on mobile without breaking desktop layout */
+        .h-scroll-mobile {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden antialiased">
@@ -433,7 +490,7 @@
                 apkUrl: OFFICIAL_APK_URL
             });
 
-            /* ==== ADMIN-CONTROLLABLE SITE CONTENT (mirrors DEFAULT_SITE_CONTENT, editable from Admin Panel, persisted in Supabase 'site_settings_new' table) ==== */
+            /* ==== ADMIN-CONTROLLABLE SITE CONTENT (mirrors DEFAULT_SITE_CONTENT, editable from Admin Panel, persisted in Supabase 'site_settings' table) ==== */
             const [siteContent, setSiteContent] = useState({ ...DEFAULT_SITE_CONTENT });
             const [siteContentForm, setSiteContentForm] = useState({ ...DEFAULT_SITE_CONTENT });
             const [savingSiteContent, setSavingSiteContent] = useState(false);
@@ -520,7 +577,7 @@
                     if (!hErr && hData && hData.length > 0) setHolidays(hData);
 
                     /* Site content / images / patron info — single settings row (id = 1) */
-                    const { data: scData, error: scErr } = await supabaseClient.from('site_settings_new').select('*').eq('id', 1).maybeSingle();
+                    const { data: scData, error: scErr } = await supabaseClient.from('site_settings').select('*').eq('id', 1).maybeSingle();
                     if (!scErr && scData) {
                         const mergedContent = { ...DEFAULT_SITE_CONTENT, ...scData };
                         setSiteContent(mergedContent);
@@ -1343,7 +1400,7 @@
                     };
 
                     if (supabaseClient) {
-                        const { error } = await supabaseClient.from('site_settings_new').upsert([payload], { onConflict: 'id' });
+                        const { error } = await supabaseClient.from('site_settings').upsert([payload], { onConflict: 'id' });
                         if (error) throw error;
                     }
 
@@ -1353,7 +1410,7 @@
                     showToast("Site content, timings, rules, patron info & images updated successfully!", "success");
                     fetchDatabaseData();
                 } catch(err) {
-                    showToast("Error saving site content: " + err.message + " (Ensure 'site_settings_new' table exists in Supabase)", "error");
+                    showToast("Error saving site content: " + err.message + " (Ensure 'site_settings' table exists in Supabase)", "error");
                 } finally {
                     setSavingSiteContent(false);
                 }
@@ -1618,7 +1675,7 @@
                 <div className="flex-1 flex flex-col min-h-screen bg-sky-50/60 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
                     
                     {toast && (
-                        <div className={`fixed top-4 right-4 z-[2200] px-4 py-3 rounded-2xl shadow-2xl border text-xs sm:text-sm font-semibold flex items-center space-x-2.5 animate-slide-down ${
+                        <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-[2200] px-4 py-3 rounded-2xl shadow-2xl border text-xs sm:text-sm font-semibold flex items-center space-x-2.5 animate-slide-down ${
                             toast.type === 'success' ? 'bg-sky-900 border-sky-400 text-sky-100' : 'bg-red-900 border-red-500 text-red-100'
                         }`}>
                             <i className={`fa-solid ${toast.type === 'success' ? 'fa-circle-check text-emerald-400 text-base' : 'fa-circle-info text-amber-400 text-base'}`}></i>
@@ -1627,7 +1684,7 @@
                     )}
 
                     {/* Announcement Ticker */}
-                    <div className={`text-white font-bold px-3 py-2 text-xs sm:text-sm overflow-hidden shadow-sm flex items-center w-full ${holidayStatus.isHoliday ? 'bg-gradient-to-r from-red-700 via-rose-600 to-red-700' : 'bg-gradient-to-r from-red-600 via-amber-500 to-red-600'}`}>
+                    <div className={`text-white font-bold px-3 sm:px-5 md:px-6 py-2 md:py-2.5 text-xs sm:text-sm overflow-hidden shadow-sm flex items-center w-full ${holidayStatus.isHoliday ? 'bg-gradient-to-r from-red-700 via-rose-600 to-red-700' : 'bg-gradient-to-r from-red-600 via-amber-500 to-red-600'}`}>
                         <div className="mr-3 text-amber-200 font-extrabold shrink-0 flex items-center space-x-1.5 whitespace-nowrap">
                             <i className={`fa-solid ${holidayStatus.isHoliday ? 'fa-holly-berry text-amber-300 animate-bounce' : 'fa-bullhorn text-amber-300'}`}></i>
                             <span>{holidayStatus.isHoliday ? t('festivalAlert') : t('noticeLabel')}</span>
@@ -1642,10 +1699,10 @@
 
                     {/* Header */}
                     <header className="site-header bg-sky-900 dark:bg-slate-900 border-b-4 border-red-600 text-white shadow-2xl">
-                        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-3">
-                            <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer min-w-0" onClick={() => setActiveView('HOME')}>
+                        <div className="w-full max-w-7xl mx-auto px-2.5 sm:px-6 md:px-8 lg:px-10 py-2.5 sm:py-3 md:py-3.5 flex items-center justify-between gap-2 sm:gap-3">
+                            <div className="flex items-center space-x-2.5 sm:space-x-4 cursor-pointer min-w-0" onClick={() => setActiveView('HOME')}>
                                 <div className="relative shrink-0">
-                                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white p-1 border-2 border-amber-400 shadow-lg flex items-center justify-center overflow-hidden">
+                                    <div className="w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl bg-white p-1 border-2 border-amber-400 shadow-lg flex items-center justify-center overflow-hidden">
                                         <img 
                                             src={siteImages.logo} 
                                             alt="Delhi GPO Official Logo" 
@@ -1655,19 +1712,19 @@
                                     </div>
                                 </div>
                                 <div className="min-w-0 flex flex-col justify-center">
-                                    <h1 className="font-cinzel font-black text-xl sm:text-2xl md:text-3xl text-amber-300 bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wider leading-tight truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                                    <h1 className="font-cinzel font-black text-lg sm:text-xl md:text-2xl lg:text-3xl text-amber-300 bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent tracking-wider leading-tight truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                                         DELHI GPO - 110006
                                     </h1>
-                                    <p className="text-xs sm:text-sm text-sky-100 font-medium tracking-tight truncate drop-shadow-sm opacity-95 mt-0.5">
+                                    <p className="text-[11px] sm:text-xs md:text-sm text-sky-100 font-medium tracking-tight truncate drop-shadow-sm opacity-95 mt-0.5">
                                         Department of Posts • Government of India
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
+                            <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
                                 <button 
                                     onClick={() => setShowPdfModal(true)}
-                                    className="relative w-9 h-9 sm:w-11 sm:h-11 bg-sky-950 text-amber-300 border-2 border-amber-400 rounded-xl flex items-center justify-center text-sm font-bold hover:bg-sky-900 transition-all shrink-0 cursor-pointer shadow-md"
+                                    className="tap-target relative w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 bg-sky-950 text-amber-300 border-2 border-amber-400 rounded-xl flex items-center justify-center text-sm font-bold hover:bg-sky-900 transition-all shrink-0 cursor-pointer shadow-md"
                                     title="View Library PDF"
                                     aria-label="View Library PDF"
                                 >
@@ -1679,7 +1736,7 @@
                                     value={lang} 
                                     onChange={(e) => handleLanguageChange(e.target.value)}
                                     aria-label="Select Language"
-                                    className="w-11 h-10 sm:w-12 sm:h-11 bg-sky-950 text-amber-300 border-2 border-amber-400 rounded-xl text-center text-xs sm:text-sm font-bold cursor-pointer hover:bg-sky-900 transition-all shrink-0 shadow-md appearance-none p-1 flex items-center justify-center"
+                                    className="tap-target w-11 h-10 sm:w-11 sm:h-10 md:w-12 md:h-11 bg-sky-950 text-amber-300 border-2 border-amber-400 rounded-xl text-center text-xs sm:text-sm font-bold cursor-pointer hover:bg-sky-900 transition-all shrink-0 shadow-md appearance-none p-1 flex items-center justify-center"
                                 >
                                     <option value="EN">EN</option>
                                     <option value="HI">HI</option>
@@ -1694,7 +1751,7 @@
                                         setShowNotificationModal(true);
                                         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
                                     }}
-                                    className="relative w-9 h-9 sm:w-11 sm:h-11 bg-sky-950 text-amber-300 border-2 border-amber-400 rounded-xl flex items-center justify-center text-sm font-bold hover:bg-sky-900 transition-all shrink-0 cursor-pointer shadow-md"
+                                    className="tap-target relative w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 bg-sky-950 text-amber-300 border-2 border-amber-400 rounded-xl flex items-center justify-center text-sm font-bold hover:bg-sky-900 transition-all shrink-0 cursor-pointer shadow-md"
                                     title="Notifications"
                                     aria-label="Notifications"
                                 >
@@ -1710,11 +1767,11 @@
                     </header>
 
                     {/* Navigation Bar */}
-                    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 pt-4 pb-2">
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2.5">
+                    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-4 pb-2">
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2 md:gap-2.5">
                             <button
                                 onClick={() => setActiveView('HOME')}
-                                className={`p-2 sm:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'HOME' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
+                                className={`tap-target p-2 sm:p-2.5 md:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'HOME' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
                             >
                                 <i className="fa-solid fa-house text-sm sm:text-base text-sky-800 dark:text-amber-400"></i>
                                 <span className="text-[11px] sm:text-xs font-bold truncate w-full text-center">{t('navHome')}</span>
@@ -1722,7 +1779,7 @@
 
                             <button
                                 onClick={() => setActiveView('TOTAL_BOOKS')}
-                                className={`p-2 sm:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'TOTAL_BOOKS' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
+                                className={`tap-target p-2 sm:p-2.5 md:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'TOTAL_BOOKS' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
                             >
                                 <div className="flex items-center space-x-1">
                                     <i className="fa-solid fa-book text-sm sm:text-base text-sky-800 dark:text-amber-400"></i>
@@ -1733,7 +1790,7 @@
 
                             <button
                                 onClick={() => setActiveView('REQUISITION')}
-                                className={`p-2 sm:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'REQUISITION' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
+                                className={`tap-target p-2 sm:p-2.5 md:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'REQUISITION' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
                             >
                                 <i className="fa-solid fa-file-signature text-sm sm:text-base text-red-600 dark:text-red-400"></i>
                                 <span className="text-[11px] sm:text-xs font-bold truncate w-full text-center">{t('navReq')}</span>
@@ -1741,7 +1798,7 @@
 
                             <button
                                 onClick={() => setActiveView('HELD_BOOKS')}
-                                className={`p-2 sm:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'HELD_BOOKS' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
+                                className={`tap-target p-2 sm:p-2.5 md:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'HELD_BOOKS' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
                             >
                                 <div className="flex items-center space-x-1">
                                     <i className="fa-solid fa-clock-rotate-left text-sm sm:text-base text-amber-600 dark:text-amber-400"></i>
@@ -1752,7 +1809,7 @@
 
                             <button
                                 onClick={() => setActiveView('ISSUED_BOOKS')}
-                                className={`p-2 sm:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'ISSUED_BOOKS' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
+                                className={`tap-target p-2 sm:p-2.5 md:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'ISSUED_BOOKS' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
                             >
                                 <div className="flex items-center space-x-1">
                                     <i className="fa-solid fa-hand-holding-bookmark text-sm sm:text-base text-purple-600 dark:text-purple-400"></i>
@@ -1763,7 +1820,7 @@
 
                             <button
                                 onClick={() => setActiveView('AVAIL_BOOKS')}
-                                className={`p-2 sm:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'AVAIL_BOOKS' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
+                                className={`tap-target p-2 sm:p-2.5 md:p-3 rounded-2xl border-2 flex flex-col items-center justify-center space-y-1 transition-all shadow-sm ${activeView === 'AVAIL_BOOKS' ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold shadow-md scale-[1.01]' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900 hover:border-amber-400 text-sky-950 dark:text-sky-100 font-semibold'}`}
                             >
                                 <div className="flex items-center space-x-1">
                                     <i className="fa-solid fa-circle-check text-sm sm:text-base text-emerald-600 dark:text-emerald-400"></i>
@@ -1775,7 +1832,7 @@
                     </div>
 
                     {/* Main Content Area */}
-                    <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 py-4">
+                    <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 md:px-8 lg:px-10 py-4 md:py-5 lg:py-6">
                         
                         {/* HOME VIEW */}
                         {activeView === 'HOME' && (
@@ -1785,12 +1842,12 @@
                                     <img 
                                         src={siteImages.hero} 
                                         alt="Main Head Banner" 
-                                        className="w-full max-h-[380px] sm:max-h-[460px] object-contain rounded-2xl mx-auto shadow-md" 
+                                        className="w-full max-h-[200px] sm:max-h-[320px] md:max-h-[420px] lg:max-h-[480px] xl:max-h-[520px] object-contain rounded-2xl mx-auto shadow-md" 
                                         onError={(e) => { e.target.onerror = null; e.target.src = OFFICIAL_HERO_URL; }}
                                     />
                                 </div>
 
-                                <div className="rounded-3xl p-6 sm:p-8 shadow-2xl border-2 bg-white dark:bg-slate-900 border-amber-400/90 relative overflow-hidden">
+                                <div className="rounded-3xl p-5 sm:p-8 md:p-9 shadow-2xl border-2 bg-white dark:bg-slate-900 border-amber-400/90 relative overflow-hidden">
                                     <div className="tricolour-accent absolute top-0 left-0 right-0"></div>
 
                                     <div className="max-w-5xl mx-auto p-4 rounded-2xl bg-gradient-to-r from-sky-50 via-white to-sky-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 border-2 border-amber-400/80 shadow-md flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
@@ -1817,7 +1874,7 @@
                                 </div>
 
                                 {/* Info Grid */}
-                                <div className="rounded-3xl p-6 shadow-xl border-2 bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900">
+                                <div className="rounded-3xl p-5 sm:p-6 md:p-7 shadow-xl border-2 bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs sm:text-sm">
                                         <div className="p-5 rounded-2xl border-2 flex flex-col justify-between bg-sky-50/80 dark:bg-slate-950 border-sky-300 dark:border-sky-800 shadow-sm">
                                             <div>
@@ -1881,7 +1938,7 @@
                                 </div>
 
                                 {/* Governing Body */}
-                                <div className="rounded-3xl p-6 shadow-xl border-2 bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900">
+                                <div className="rounded-3xl p-5 sm:p-6 md:p-7 shadow-xl border-2 bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 border-b pb-3 border-sky-100 dark:border-sky-900">
                                         <div>
                                             <h2 className="font-cinzel font-black text-lg sm:text-xl text-sky-950 dark:text-amber-300">{t('govBodyTitle')}</h2>
@@ -1913,7 +1970,7 @@
                                 </div>
 
                                 {/* Social Channels */}
-                                <div className="rounded-3xl p-6 shadow-xl border-2 bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900">
+                                <div className="rounded-3xl p-5 sm:p-6 md:p-7 shadow-xl border-2 bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-900">
                                     <h3 className="font-cinzel font-black text-base sm:text-lg text-sky-950 dark:text-amber-300 mb-3">{t('socialChannels')}</h3>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         {socialChannelsList.map((ch) => (
@@ -1936,7 +1993,7 @@
                                 
                                 {/* Search & Filters Bar */}
                                 <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-lg space-y-3">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
                                         <div className="relative">
                                             <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
                                             <input 
@@ -1997,7 +2054,7 @@
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('tryAdjusting')}</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                                         {paginatedBooks.map((book) => (
                                             <div key={book.id} className="p-4 rounded-3xl bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-md hover:border-amber-400 transition-all flex flex-col justify-between space-y-3 relative overflow-hidden group">
                                                 <div>
@@ -2063,13 +2120,13 @@
 
                                 {/* Pagination Controls */}
                                 {totalPages > 1 && (
-                                    <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-md flex items-center justify-between text-xs sm:text-sm font-semibold">
-                                        <span>{t('showing')} {(currentPage - 1) * pageSize + 1} {t('to')} {Math.min(currentPage * pageSize, filteredBooks.length)} {t('of')} {filteredBooks.length} {t('volumes')}</span>
+                                    <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm font-semibold">
+                                        <span className="text-center sm:text-left">{t('showing')} {(currentPage - 1) * pageSize + 1} {t('to')} {Math.min(currentPage * pageSize, filteredBooks.length)} {t('of')} {filteredBooks.length} {t('volumes')}</span>
                                         <div className="flex items-center space-x-2">
                                             <button 
                                                 disabled={currentPage === 1}
                                                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                                                className="px-3 py-1.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-100 dark:bg-slate-800 disabled:opacity-40 cursor-pointer"
+                                                className="tap-target px-3 py-1.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-100 dark:bg-slate-800 disabled:opacity-40 cursor-pointer"
                                             >
                                                 {t('prev')}
                                             </button>
@@ -2077,7 +2134,7 @@
                                             <button 
                                                 disabled={currentPage === totalPages}
                                                 onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                                                className="px-3 py-1.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-100 dark:bg-slate-800 disabled:opacity-40 cursor-pointer"
+                                                className="tap-target px-3 py-1.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-100 dark:bg-slate-800 disabled:opacity-40 cursor-pointer"
                                             >
                                                 {t('next')}
                                             </button>
@@ -2089,7 +2146,7 @@
 
                         {/* REQUISITION FORM VIEW */}
                         {activeView === 'REQUISITION' && (
-                            <div className="max-w-2xl mx-auto rounded-3xl p-6 sm:p-8 shadow-2xl border-2 bg-white dark:bg-slate-900 border-amber-400 space-y-5 animate-slide-down">
+                            <div className="max-w-2xl mx-auto rounded-3xl p-5 sm:p-8 md:p-9 shadow-2xl border-2 bg-white dark:bg-slate-900 border-amber-400 space-y-5 animate-slide-down">
                                 <div className="border-b pb-3 border-sky-100 dark:border-sky-900">
                                     <h2 className="font-cinzel font-black text-xl text-sky-950 dark:text-amber-300">{t('reqFormTitle')}</h2>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t('reqFormSub')}</p>
@@ -2209,14 +2266,14 @@
                         {activeView === 'ADMIN_PANEL' && isAdminLoggedIn && (
                             <div className="space-y-6 animate-slide-down">
                                 
-                                <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border-2 border-amber-400 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
-                                    <div>
-                                        <h2 className="font-cinzel font-black text-xl text-sky-950 dark:text-amber-300">{t('adminControlDesk')}</h2>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Logged in as Custodian Admin ({authEmail})</p>
+                                <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border-2 border-amber-400 shadow-xl flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
+                                    <div className="text-center md:text-left">
+                                        <h2 className="font-cinzel font-black text-lg sm:text-xl text-sky-950 dark:text-amber-300">{t('adminControlDesk')}</h2>
+                                        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium break-all">Logged in as Custodian Admin ({authEmail})</p>
                                     </div>
                                     <button 
                                         onClick={handleAdminLogout} 
-                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow transition-all cursor-pointer"
+                                        className="tap-target px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 shadow transition-all cursor-pointer shrink-0"
                                     >
                                         <i className="fa-solid fa-right-from-bracket"></i>
                                         <span>{t('logoutBtn')}</span>
@@ -2224,7 +2281,7 @@
                                 </div>
 
                                 {/* Admin Sub-Tabs */}
-                                <div className="flex overflow-x-auto custom-scrollbar gap-2 pb-2">
+                                <div className="flex overflow-x-auto h-scroll-mobile custom-scrollbar gap-2 pb-2 -mx-1 px-1">
                                     {[
                                         { id: 'PENDING_REQS', label: 'Pending Requests', count: requisitions.filter(r => r.status === 'PENDING').length },
                                         { id: 'HOLD_DESK', label: 'Books on Hold', count: books.filter(b => b.status === 'Held').length },
@@ -2243,7 +2300,7 @@
                                         <button
                                             key={tab.id}
                                             onClick={() => setAdminSubTab(tab.id)}
-                                            className={`px-4 py-2.5 rounded-2xl font-bold text-xs whitespace-nowrap border transition-all cursor-pointer flex items-center space-x-1.5 ${
+                                            className={`tap-target shrink-0 px-3.5 sm:px-4 py-2.5 rounded-2xl font-bold text-[11px] sm:text-xs whitespace-nowrap border transition-all cursor-pointer flex items-center space-x-1.5 ${
                                                 adminSubTab === tab.id ? 'bg-amber-500 border-amber-400 text-slate-950 shadow-md' : 'bg-white dark:bg-slate-900 border-sky-200 dark:border-sky-800 text-slate-700 dark:text-slate-200'
                                             }`}
                                         >
@@ -2272,10 +2329,10 @@
                                                             </div>
                                                             <div className="text-slate-500 font-mono mt-0.5">Mobile: {req.mobile} • Date: {req.request_date}</div>
                                                         </div>
-                                                        <div className="flex items-center space-x-2 shrink-0">
-                                                            <button onClick={() => handleApproveAndHold(req)} className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow cursor-pointer">{t('approveHoldBtn')}</button>
-                                                            <button onClick={() => handleApproveAndIssue(req)} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow cursor-pointer">{t('approveBtn')}</button>
-                                                            <button onClick={() => handleRejectReq(req)} className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow cursor-pointer">{t('rejectBtn')}</button>
+                                                        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                                            <button onClick={() => handleApproveAndHold(req)} className="tap-target flex-1 md:flex-none px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow cursor-pointer whitespace-nowrap">{t('approveHoldBtn')}</button>
+                                                            <button onClick={() => handleApproveAndIssue(req)} className="tap-target flex-1 md:flex-none px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow cursor-pointer whitespace-nowrap">{t('approveBtn')}</button>
+                                                            <button onClick={() => handleRejectReq(req)} className="tap-target flex-1 md:flex-none px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow cursor-pointer whitespace-nowrap">{t('rejectBtn')}</button>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -2351,7 +2408,7 @@
                                                     ))}
                                                 </select>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <div>
                                                     <label className="block mb-1 font-bold">Employee Name *</label>
                                                     <input type="text" value={manualIssueForm.empName} onChange={(e) => setManualIssueForm({ ...manualIssueForm, empName: e.target.value })} className="w-full p-2.5 rounded-xl border dark:bg-slate-950" required />
@@ -2361,7 +2418,7 @@
                                                     <input type="text" value={manualIssueForm.empId} onChange={(e) => setManualIssueForm({ ...manualIssueForm, empId: e.target.value })} className="w-full p-2.5 rounded-xl border dark:bg-slate-950" required />
                                                 </div>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <div>
                                                     <label className="block mb-1 font-bold">Cadre / Designation</label>
                                                     <input type="text" value={manualIssueForm.cadre} onChange={(e) => setManualIssueForm({ ...manualIssueForm, cadre: e.target.value })} className="w-full p-2.5 rounded-xl border dark:bg-slate-950" placeholder="e.g. Postal Assistant" />
@@ -2383,7 +2440,7 @@
                                 {/* Tab 5: Catalog Manager */}
                                 {adminSubTab === 'CATALOG_MGR' && (
                                     <div className="rounded-3xl p-6 bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-xl space-y-4">
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex flex-wrap justify-between items-center gap-2">
                                             <h3 className="font-cinzel font-black text-lg text-sky-950 dark:text-amber-300">Catalog Book Manager</h3>
                                             <button onClick={() => { setEditingBook(null); setBookFormData({ accession_no: '', book_no: '', title: '', author: '', category: 'Literature', medium: 'English', status: 'Available', rack_no: 'R-1' }); setShowBookModal(true); }} className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow cursor-pointer">
                                                 <i className="fa-solid fa-plus"></i><span>Add New Book</span>
@@ -2586,7 +2643,7 @@
                                 {/* Tab 9: Governing Body Manager */}
                                 {adminSubTab === 'GOVERNING_BODY' && (
                                     <div className="rounded-3xl p-6 bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-xl space-y-4">
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex flex-wrap justify-between items-center gap-2">
                                             <h3 className="font-cinzel font-black text-lg text-sky-950 dark:text-amber-300">Governing Body / Committee Manager</h3>
                                             <button onClick={() => { setEditingGovMember(null); setGovFormData({ sno: (governingBody.length + 1).toString(), name: '', desig: '', role: 'Member' }); setShowGovModal(true); }} className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow cursor-pointer">
                                                 <i className="fa-solid fa-plus"></i><span>Add Member</span>
@@ -2625,7 +2682,7 @@
                                 {/* Tab 10: Social Channels Manager */}
                                 {adminSubTab === 'SOCIAL_CHANNELS' && (
                                     <div className="rounded-3xl p-6 bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-xl space-y-4">
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex flex-wrap justify-between items-center gap-2">
                                             <h3 className="font-cinzel font-black text-lg text-sky-950 dark:text-amber-300">Social Media Channels Manager</h3>
                                             <button onClick={() => { setEditingSocial(null); setSocialFormData({ channel_id: '', name: '', handle: '', icon: 'fa-link', color: 'bg-sky-700 hover:bg-sky-800 text-white', url: '' }); setShowSocialModal(true); }} className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow cursor-pointer">
                                                 <i className="fa-solid fa-plus"></i><span>Add Channel</span>
@@ -2656,7 +2713,7 @@
                                 {/* Tab 11: Holidays & Festivals Manager */}
                                 {adminSubTab === 'HOLIDAYS_MGR' && (
                                     <div className="rounded-3xl p-6 bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-xl space-y-4">
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex flex-wrap justify-between items-center gap-2">
                                             <h3 className="font-cinzel font-black text-lg text-sky-950 dark:text-amber-300">Holidays & Festival Alerts Manager</h3>
                                             <button onClick={() => { setEditingHoliday(null); setHolidayFormData({ holiday_name: '', holiday_date: '', wish_message: '', is_active: true }); setShowHolidayModal(true); }} className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow cursor-pointer">
                                                 <i className="fa-solid fa-plus"></i><span>Add Holiday</span>
@@ -2700,7 +2757,7 @@
                                 {/* Tab 12: Notifications Broadcast Manager */}
                                 {adminSubTab === 'NOTIFICATIONS_MGR' && (
                                     <div className="rounded-3xl p-6 bg-white dark:bg-slate-900 border-2 border-sky-200 dark:border-sky-900 shadow-xl space-y-4">
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex flex-wrap justify-between items-center gap-2">
                                             <h3 className="font-cinzel font-black text-lg text-sky-950 dark:text-amber-300">Notifications Broadcast Manager</h3>
                                             <button onClick={() => { setNotifFormData({ title: '', message: '' }); setShowNotifModal(true); }} className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow cursor-pointer">
                                                 <i className="fa-solid fa-bullhorn"></i><span>Broadcast New</span>
@@ -2741,7 +2798,7 @@
                                             <div>• <span className="font-mono">books</span>, <span className="font-mono">requisitions</span>, <span className="font-mono">book_transactions</span> — Catalog &amp; Circulation</div>
                                             <div>• <span className="font-mono">holidays</span> — Holidays &amp; Festivals Manager</div>
                                             <div>• <span className="font-mono">notifications</span> — Notifications Broadcast Manager</div>
-                                            <div>• <span className="font-mono">site_settings_new</span> — Site Content &amp; Images (single-row table)</div>
+                                            <div>• <span className="font-mono">site_settings</span> — Site Content &amp; Images (single-row table)</div>
                                             <div>• <span className="font-mono">governing_body</span> — Governing Body Manager</div>
                                             <div>• <span className="font-mono">social_channels</span> — Social Channels Manager</div>
                                         </div>
@@ -2825,7 +2882,7 @@
                     {/* Password Reset Recovery Modal */}
                     {showResetModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[2300] flex items-center justify-center p-4 animate-slide-down">
-                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative">
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative mobile-modal-scroll">
                                 <div className="text-center mb-4">
                                     <div className="w-12 h-12 bg-amber-500 text-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-2 text-xl shadow">
                                         <i className="fa-solid fa-lock"></i>
@@ -2913,7 +2970,7 @@
                     {/* Notification Modal */}
                     {showNotificationModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[2200] flex items-center justify-center p-4 animate-slide-down">
-                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative">
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative mobile-modal-scroll">
                                 <button 
                                     onClick={() => setShowNotificationModal(false)} 
                                     className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer text-xl"
@@ -2949,7 +3006,7 @@
                     {/* Librarian Login Modal */}
                     {showAuthModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[2200] flex items-center justify-center p-4 animate-slide-down">
-                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative">
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative mobile-modal-scroll">
                                 <button 
                                     onClick={() => { setShowAuthModal(false); setIsForgotMode(false); setForgotMsg({ text: '', type: '' }); }} 
                                     className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer text-xl"
@@ -3088,13 +3145,13 @@
                     {/* Add/Edit Book Modal */}
                     {showBookModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[2200] flex items-center justify-center p-4 animate-slide-down">
-                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative">
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative mobile-modal-scroll">
                                 <button onClick={() => setShowBookModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer text-xl">
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
                                 <h3 className="font-cinzel font-black text-lg text-sky-950 dark:text-amber-300 mb-3">{editingBook ? 'Edit Book Details' : 'Add New Book'}</h3>
                                 <form onSubmit={handleSaveBook} className="space-y-3 text-xs sm:text-sm font-medium">
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
                                             <label className="block mb-1 font-bold">Accession No *</label>
                                             <input type="text" value={bookFormData.accession_no} onChange={(e) => setBookFormData({ ...bookFormData, accession_no: e.target.value })} className="w-full p-2.5 rounded-xl border dark:bg-slate-950" required />
@@ -3112,7 +3169,7 @@
                                         <label className="block mb-1 font-bold">Author *</label>
                                         <input type="text" value={bookFormData.author} onChange={(e) => setBookFormData({ ...bookFormData, author: e.target.value })} className="w-full p-2.5 rounded-xl border dark:bg-slate-950" required />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
                                             <label className="block mb-1 font-bold">Category</label>
                                             <select value={bookFormData.category} onChange={(e) => setBookFormData({ ...bookFormData, category: e.target.value })} className="w-full p-2.5 rounded-xl border dark:bg-slate-950">
@@ -3136,7 +3193,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
                                             <label className="block mb-1 font-bold">Rack No</label>
                                             <input type="text" value={bookFormData.rack_no} onChange={(e) => setBookFormData({ ...bookFormData, rack_no: e.target.value })} className="w-full p-2.5 rounded-xl border dark:bg-slate-950" />
@@ -3174,7 +3231,7 @@
                     {/* Add/Edit Governing Body Member Modal */}
                     {showGovModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[2200] flex items-center justify-center p-4 animate-slide-down">
-                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative">
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative mobile-modal-scroll">
                                 <button onClick={() => setShowGovModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer text-xl">
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
@@ -3230,7 +3287,7 @@
                     {/* Add/Edit Social Channel Modal */}
                     {showSocialModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[2200] flex items-center justify-center p-4 animate-slide-down">
-                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative">
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative mobile-modal-scroll">
                                 <button onClick={() => setShowSocialModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer text-xl">
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
@@ -3248,7 +3305,7 @@
                                         <label className="block mb-1 font-bold">Channel URL *</label>
                                         <input type="text" value={socialFormData.url} onChange={(e) => setSocialFormData({ ...socialFormData, url: e.target.value })} placeholder="https://..." className="w-full p-2.5 rounded-xl border dark:bg-slate-950 font-mono text-[11px]" required />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
                                             <label className="block mb-1 font-bold">Font Awesome Icon Class</label>
                                             <input type="text" value={socialFormData.icon} onChange={(e) => setSocialFormData({ ...socialFormData, icon: e.target.value })} placeholder="fa-whatsapp" className="w-full p-2.5 rounded-xl border dark:bg-slate-950 font-mono text-[11px]" />
@@ -3282,7 +3339,7 @@
                     {/* Add/Edit Holiday Modal */}
                     {showHolidayModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[2200] flex items-center justify-center p-4 animate-slide-down">
-                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative">
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative mobile-modal-scroll">
                                 <button onClick={() => setShowHolidayModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer text-xl">
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
@@ -3328,7 +3385,7 @@
                     {/* Broadcast Notification Modal */}
                     {showNotifModal && (
                         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[2200] flex items-center justify-center p-4 animate-slide-down">
-                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative">
+                            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border-2 border-amber-400 relative mobile-modal-scroll">
                                 <button onClick={() => setShowNotifModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer text-xl">
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
